@@ -7,7 +7,7 @@ task configurations, conditions, and execution contexts.
 """
 
 from typing import Dict, Any, List, Set
-from models import Flow, Task, Condition
+from app.models.models import Flow
 
 
 class FlowValidationError(Exception):
@@ -242,17 +242,23 @@ class FlowValidator:
         Raises:
             FlowValidationError: If any validation step fails
         """
+        # 1. Validate structure
         cls.validate_flow_structure(flow_data)
 
         flow_info = flow_data["flow"]
 
+        # 2. Validate tasks and conditions
         cls.validate_tasks(flow_info["tasks"])
-
         task_names = {task["name"] for task in flow_info["tasks"]}
         cls.validate_conditions(flow_info["conditions"], task_names, flow_info["start_task"])
 
-        flow = Flow.from_json(flow_data)
+        # 3. Manually construct Flow instance (to avoid recursive validation)
+        try:
+            flow = Flow.from_dict(flow_data["flow"])
+        except Exception as e:
+            raise FlowValidationError(f"Failed to parse Flow object: {e}")
 
+        # 4. Validate logic using Flow instance
         cls.validate_flow_logic(flow)
 
 

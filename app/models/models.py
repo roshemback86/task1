@@ -157,7 +157,7 @@ class Flow:
             ValueError: If flow data is invalid or validation fails
         """
         try:
-            from validators import FlowValidator
+            from app.validators.validators import FlowValidator
             FlowValidator.validate_complete_flow(flow_data)
         except ImportError:
             if "flow" not in flow_data:
@@ -192,6 +192,28 @@ class Flow:
             id=flow_info["id"],
             name=flow_info["name"],
             start_task=flow_info["start_task"],
+            tasks=tasks,
+            conditions=conditions
+        )
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Flow":
+        """
+        Create a Flow instance from a dictionary (e.g. parsed JSON).
+    
+        Args:
+            data: Dictionary containing flow structure
+    
+        Returns:
+            Flow instance
+        """
+        tasks = [Task(**task_data) for task_data in data.get("tasks", [])]
+        conditions = [Condition(**cond_data) for cond_data in data.get("conditions", [])]
+    
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            start_task=data["start_task"],
             tasks=tasks,
             conditions=conditions
         )

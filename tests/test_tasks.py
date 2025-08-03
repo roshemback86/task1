@@ -1,7 +1,7 @@
 # tests/test_tasks.py
 
 import pytest
-from demo_tasks import TASK_FUNCTIONS
+from app.services.demo_tasks import TASK_FUNCTIONS
 
 
 @pytest.mark.asyncio

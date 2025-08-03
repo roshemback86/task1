@@ -1,7 +1,7 @@
 # tests/test_validators.py
 
 import pytest
-from validators import ContextValidator, FlowValidationError
+from app.validators.validators import ContextValidator, FlowValidationError
 
 
 def test_context_validator_valid():

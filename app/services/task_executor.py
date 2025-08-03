@@ -9,7 +9,7 @@ including error handling and result processing.
 import asyncio
 from typing import Dict, Any
 from datetime import datetime
-from models import Task, TaskResult, TaskStatus
+from app.models.models import Task, TaskResult, TaskStatus
 
 
 class TaskExecutor:

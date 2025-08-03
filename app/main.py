@@ -7,10 +7,10 @@ including flow creation, execution, and status monitoring.
 """
 
 from fastapi import FastAPI, HTTPException
-from models import Flow
-from flow_manager import FlowManager
-from demo_tasks import TASK_FUNCTIONS
-from api_models import (
+from app.models.models import Flow
+from app.core.flow_manager import FlowManager
+from app.services.demo_tasks import TASK_FUNCTIONS
+from app.models.api_models import (
     FlowCreateRequest, FlowExecuteRequest, FlowExecutionResponse,
     FlowInfo, TaskInfo, ConditionInfo, HealthResponse, MessageResponse,
     TaskResultResponse
@@ -35,7 +35,7 @@ async def create_flow(request: FlowCreateRequest):
         HTTPException: 400 for validation errors, 500 for internal errors
     """
     try:
-        from validators import FlowValidator, FlowValidationError
+        from app.validators.validators import FlowValidator, FlowValidationError
 
         flow = Flow.from_json(request.flow_data)
 
@@ -70,7 +70,7 @@ async def execute_flow(request: FlowExecuteRequest):
     """
     try:
         if request.context:
-            from validators import ContextValidator, FlowValidationError
+            from app.validators.validators import ContextValidator, FlowValidationError
             ContextValidator.validate_execution_context(request.context)
 
         execution = await flow_manager.execute_flow(request.flow_id, request.context)

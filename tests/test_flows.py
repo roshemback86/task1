@@ -1,9 +1,9 @@
 # tests/test_flows.py
 
 import pytest
-from flow_manager import FlowManager
-from models import Flow, Task, Condition
-from demo_tasks import TASK_FUNCTIONS
+from app.core.flow_manager import FlowManager
+from app.models.models import Flow, Task, Condition
+from app.services.demo_tasks import TASK_FUNCTIONS
 
 
 @pytest.fixture

@@ -7,9 +7,9 @@ registration, and execution without requiring the API server.
 """
 
 import asyncio
-from models import Flow
-from flow_manager import FlowManager
-from demo_tasks import TASK_FUNCTIONS
+from app.models.models import Flow
+from app.core.flow_manager import FlowManager
+from app.services.demo_tasks import TASK_FUNCTIONS
 
 SAMPLE_FLOW_JSON = {
     "flow": {

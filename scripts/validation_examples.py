@@ -7,8 +7,7 @@ common error cases, and edge conditions for testing the validation framework.
 """
 
 import requests
-import json
-from validators import FlowValidator, ContextValidator, FlowValidationError
+from app.validators.validators import FlowValidator, ContextValidator, FlowValidationError
 
 
 def test_valid_flow():
