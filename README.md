@@ -101,6 +101,12 @@ python -m pytest
 
 Make sure you have `pytest`, `pytest-asyncio`, and `anyio` installed.
 
+Tests are located under the tests/ directory and include:
+• test_flows.py: end-to-end flow execution tests
+• test_tasks.py: unit tests for example task functions
+• test_validators.py: flow/context validation tests
+• test_flow_validator_logic.py: cycle and reachability checks
+
 ---
 
 ## Validation Testing
