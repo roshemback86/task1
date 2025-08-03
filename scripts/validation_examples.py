@@ -3,8 +3,8 @@ from app.validators.validators import FlowValidator, ContextValidator, FlowValid
 
 
 def test_valid_flow():
-    """Test case for a properly structured flow definition."""
-    print("=== Testing Valid Flow ===")
+    """Run validation on a well-formed flow definition."""
+    print("=== Valid Flow Test ===")
 
     valid_flow = {
         "flow": {
@@ -48,16 +48,16 @@ def test_valid_flow():
 
     try:
         FlowValidator.validate_complete_flow(valid_flow)
-        print("✅ Validation passed successfully!")
+        print("Validation passed.")
         return valid_flow
     except FlowValidationError as e:
-        print(f"❌ Validation error: {e}")
+        print("Validation failed:", e)
         return None
 
 
 def test_invalid_flows():
-    """Test cases for various invalid flow configurations."""
-    print("\n=== Testing Invalid Flows ===")
+    """Run validation tests for invalid flow structures."""
+    print("\n=== Invalid Flow Tests ===")
 
     test_cases = [
         {
@@ -87,20 +87,18 @@ def test_invalid_flows():
             }
         },
         {
-            "name": "Condition references nonexistent task",
+            "name": "Condition with unknown source task",
             "flow": {
                 "flow": {
                     "id": "test_flow",
                     "name": "Test Flow",
                     "start_task": "task1",
-                    "tasks": [
-                        {"name": "task1", "description": "First task"}
-                    ],
+                    "tasks": [{"name": "task1", "description": "Task"}],
                     "conditions": [
                         {
-                            "name": "condition1",
-                            "description": "Test condition",
-                            "source_task": "nonexistent_task",
+                            "name": "cond",
+                            "description": "Invalid condition",
+                            "source_task": "nonexistent",
                             "outcome": "success",
                             "target_task_success": "task1",
                             "target_task_failure": "end"
@@ -116,13 +114,11 @@ def test_invalid_flows():
                     "id": "test_flow",
                     "name": "Test Flow",
                     "start_task": "task1",
-                    "tasks": [
-                        {"name": "task1", "description": "First task"}
-                    ],
+                    "tasks": [{"name": "task1", "description": "Task"}],
                     "conditions": [
                         {
-                            "name": "condition1",
-                            "description": "Test condition",
+                            "name": "cond",
+                            "description": "Invalid outcome",
                             "source_task": "task1",
                             "outcome": "maybe",
                             "target_task_success": "end",
@@ -133,265 +129,171 @@ def test_invalid_flows():
             }
         },
         {
-            "name": "Nonexistent start_task",
+            "name": "Unknown start_task",
             "flow": {
                 "flow": {
                     "id": "test_flow",
                     "name": "Test Flow",
-                    "start_task": "nonexistent_start",
-                    "tasks": [
-                        {"name": "task1", "description": "First task"}
-                    ],
+                    "start_task": "nonexistent_task",
+                    "tasks": [{"name": "task1", "description": "Task"}],
                     "conditions": []
                 }
             }
         }
     ]
 
-    for i, test_case in enumerate(test_cases, 1):
-        print(f"\n{i}. Test: {test_case['name']}")
+    for i, case in enumerate(test_cases, 1):
+        print(f"\n{i}. {case['name']}")
         try:
-            FlowValidator.validate_complete_flow(test_case['flow'])
-            print("❌ Validation should have failed!")
+            FlowValidator.validate_complete_flow(case['flow'])
+            print("Expected validation error, but passed.")
         except FlowValidationError as e:
-            print(f"✅ Expected error: {e}")
+            print("Validation correctly failed:", e)
 
 
 def test_context_validation():
-    """Test cases for execution context validation."""
-    print("\n=== Testing Context Validation ===")
+    """Validate different execution context structures."""
+    print("\n=== Context Validation Tests ===")
 
     test_cases = [
-        {
-            "name": "Valid context",
-            "context": {
-                "user_id": "12345",
-                "order_data": {
-                    "items": [{"id": 1, "quantity": 2}],
-                    "total": 100.50
-                },
-                "metadata": {
-                    "source": "mobile_app",
-                    "version": "1.2.3"
-                }
-            },
-            "should_pass": True
-        },
-        {
-            "name": "Non-dictionary context",
-            "context": "this is not a dict",
-            "should_pass": False
-        },
-        {
-            "name": "Numeric keys in context",
-            "context": {
-                123: "numeric key",
-                "valid_key": "valid value"
-            },
-            "should_pass": False
-        },
-        {
-            "name": "Oversized context",
-            "context": {
-                "data": "x" * (1024 * 1024 + 1)
-            },
-            "should_pass": False
-        }
+        {"name": "Valid context", "context": {"a": 1}, "should_pass": True},
+        {"name": "Not a dict", "context": "not a dict", "should_pass": False},
+        {"name": "Numeric key", "context": {1: "invalid"}, "should_pass": False},
+        {"name": "Too large", "context": {"x": "x" * (1024 * 1024 + 1)}, "should_pass": False}
     ]
 
-    for i, test_case in enumerate(test_cases, 1):
-        print(f"\n{i}. Test: {test_case['name']}")
+    for i, case in enumerate(test_cases, 1):
+        print(f"\n{i}. {case['name']}")
         try:
-            ContextValidator.validate_execution_context(test_case['context'])
-            if test_case['should_pass']:
-                print("✅ Context is valid!")
+            ContextValidator.validate_execution_context(case['context'])
+            if case['should_pass']:
+                print("Context is valid.")
             else:
-                print("❌ Validation should have failed!")
+                print("Expected failure, but passed.")
         except FlowValidationError as e:
-            if not test_case['should_pass']:
-                print(f"✅ Expected error: {e}")
+            if case['should_pass']:
+                print("Unexpected error:", e)
             else:
-                print(f"❌ Unexpected error: {e}")
+                print("Validation failed as expected:", e)
 
 
 def test_edge_cases():
-    """Test edge cases and boundary conditions."""
-    print("\n=== Testing Edge Cases ===")
+    """Test edge conditions like cycles and unreachable tasks."""
+    print("\n=== Edge Case Tests ===")
 
-    print("\n1. Test: Flow with cycle")
-    cyclic_flow = {
+    # Cycle test
+    print("\n1. Flow with cycle")
+    flow = {
         "flow": {
-            "id": "cyclic_flow",
-            "name": "Flow with cycle",
+            "id": "cyclic",
+            "name": "Cycle",
             "start_task": "task1",
-            "tasks": [
-                {"name": "task1", "description": "First task"},
-                {"name": "task2", "description": "Second task"}
-            ],
+            "tasks": [{"name": "task1", "description": "t1"}, {"name": "task2", "description": "t2"}],
             "conditions": [
-                {
-                    "name": "condition1",
-                    "description": "Task1 to Task2",
-                    "source_task": "task1",
-                    "outcome": "success",
-                    "target_task_success": "task2",
-                    "target_task_failure": "end"
-                },
-                {
-                    "name": "condition2",
-                    "description": "Task2 back to Task1 (cycle!)",
-                    "source_task": "task2",
-                    "outcome": "success",
-                    "target_task_success": "task1",
-                    "target_task_failure": "end"
-                }
+                {"name": "c1", "description": "", "source_task": "task1", "outcome": "success", "target_task_success": "task2", "target_task_failure": "end"},
+                {"name": "c2", "description": "", "source_task": "task2", "outcome": "success", "target_task_success": "task1", "target_task_failure": "end"}
             ]
         }
     }
-
     try:
-        FlowValidator.validate_complete_flow(cyclic_flow)
-        print("❌ Validation should have detected cycle!")
+        FlowValidator.validate_complete_flow(flow)
+        print("Expected cycle detection, but passed.")
     except FlowValidationError as e:
-        print(f"✅ Cycle detected: {e}")
+        print("Cycle correctly detected:", e)
 
-    print("\n2. Test: Flow with unreachable tasks")
-    unreachable_flow = {
+    # Unreachable task test
+    print("\n2. Flow with unreachable tasks")
+    flow = {
         "flow": {
-            "id": "unreachable_flow",
-            "name": "Flow with unreachable tasks",
+            "id": "unreachable",
+            "name": "Unreachable",
             "start_task": "task1",
             "tasks": [
-                {"name": "task1", "description": "Reachable task"},
-                {"name": "task2", "description": "Unreachable task"},
-                {"name": "task3", "description": "Another unreachable task"}
+                {"name": "task1", "description": "reachable"},
+                {"name": "task2", "description": "unreachable"},
+                {"name": "task3", "description": "also unreachable"}
             ],
             "conditions": [
-                {
-                    "name": "condition1",
-                    "description": "Task1 ends flow",
-                    "source_task": "task1",
-                    "outcome": "success",
-                    "target_task_success": "end",
-                    "target_task_failure": "end"
-                }
+                {"name": "c", "description": "", "source_task": "task1", "outcome": "success", "target_task_success": "end", "target_task_failure": "end"}
             ]
         }
     }
-
     try:
-        FlowValidator.validate_complete_flow(unreachable_flow)
-        print("✅ Flow created with warning about unreachable tasks")
+        FlowValidator.validate_complete_flow(flow)
+        print("Validation passed with unreachable task warning.")
     except FlowValidationError as e:
-        print(f"⚠️  Error: {e}")
+        print("Validation error:", e)
 
 
 def test_api_validation():
-    """Test validation through API endpoints."""
-    print("\n=== Testing API Validation ===")
+    """Test flow validation via running API server."""
+    print("\n=== API Validation Tests ===")
 
     base_url = "http://localhost:8000"
 
     try:
-        response = requests.get(f"{base_url}/health")
-        if response.status_code != 200:
-            print("❌ Server not running. Start with: python main.py")
+        res = requests.get(f"{base_url}/health")
+        if res.status_code != 200:
+            print("Server is running but returned an unexpected status.")
             return
-    except requests.exceptions.ConnectionError:
-        print("❌ Cannot connect to server. Start with: python main.py")
+    except requests.ConnectionError:
+        print("Cannot connect to server. Make sure it is running.")
         return
 
-    print("✅ Server is accessible")
+    print("Server is reachable.")
 
     valid_flow = test_valid_flow()
     if valid_flow:
-        print("\n1. Test: Creating valid flow via API")
-        try:
-            response = requests.post(
-                f"{base_url}/flows",
-                json={"flow_data": valid_flow}
-            )
-            if response.status_code == 201:
-                print("✅ Flow successfully created")
-                result = response.json()
-                print(f"   Response: {result['message']}")
-            else:
-                print(f"❌ Unexpected status: {response.status_code}")
-                print(f"   Error: {response.text}")
-        except Exception as e:
-            print(f"❌ Request error: {e}")
+        print("\nSubmitting valid flow to API...")
+        res = requests.post(f"{base_url}/flows", json={"flow_data": valid_flow})
+        if res.status_code == 201:
+            print("Flow created successfully:", res.json().get("message"))
+        else:
+            print("Unexpected response:", res.status_code, res.text)
 
-    print("\n2. Test: Creating invalid flow via API")
-    invalid_flow = {
+    print("\nSubmitting invalid flow to API...")
+    bad_flow = {
         "flow": {
             "id": "",
-            "name": "Invalid Flow",
+            "name": "Bad Flow",
             "start_task": "task1",
             "tasks": [],
             "conditions": []
         }
     }
+    res = requests.post(f"{base_url}/flows", json={"flow_data": bad_flow})
+    if res.status_code == 400:
+        print("Validation failed as expected:", res.json())
+    else:
+        print("Unexpected response:", res.status_code)
 
-    try:
-        response = requests.post(
-            f"{base_url}/flows",
-            json={"flow_data": invalid_flow}
-        )
-        if response.status_code == 400:
-            print("✅ Validation correctly rejected invalid flow")
-            error = response.json()
-            print(f"   Error: {error['detail']}")
-        else:
-            print(f"❌ Expected status 400, got: {response.status_code}")
-    except Exception as e:
-        print(f"❌ Request error: {e}")
-
-    print("\n3. Test: Execution with invalid context")
-    try:
-        response = requests.post(
-            f"{base_url}/flows/execute",
-            json={
-                "flow_id": "order_processing",
-                "context": "invalid context"
-            }
-        )
-        if response.status_code == 422:
-            print("✅ Pydantic correctly rejected invalid context")
-            error = response.json()
-            print(f"   Error: {error['detail']}")
-        else:
-            print(f"❌ Expected status 422, got: {response.status_code}")
-    except Exception as e:
-        print(f"❌ Request error: {e}")
+    print("\nSubmitting invalid context to API...")
+    res = requests.post(f"{base_url}/flows/execute", json={"flow_id": "order_processing", "context": "not a dict"})
+    if res.status_code == 422:
+        print("Context validation failed as expected.")
+    else:
+        print("Unexpected response:", res.status_code)
 
 
 def demo_validation_levels():
-    """Demonstrate the different levels of validation."""
-    print("\n=== Validation Levels Overview ===")
+    """Explain internal validation stages."""
+    print("\n=== Validation Levels ===")
 
-    print("\n🔹 Level 1: Type Validation (Pydantic)")
-    print("   - Automatic type checking for API requests")
-    print("   - Ensures flow_id is string, context is dictionary")
-    print("   - Occurs before custom validation code")
+    print("\nLevel 1: Pydantic Type Validation")
+    print(" - Validates request structure on API input")
 
-    print("\n🔹 Level 2: Structure Validation (FlowValidator)")
-    print("   - Checks presence of required fields")
-    print("   - Validates task and condition references")
-    print("   - Ensures name uniqueness")
+    print("\nLevel 2: Flow Structure Validation")
+    print(" - Checks required fields, types, uniqueness")
 
-    print("\n🔹 Level 3: Logic Validation")
-    print("   - Detects cycles in flow execution")
-    print("   - Identifies unreachable tasks")
-    print("   - Validates logical consistency")
+    print("\nLevel 3: Flow Logic Validation")
+    print(" - Detects cycles and unreachable tasks")
 
-    print("\n🔹 Level 4: Runtime Validation")
-    print("   - Checks task function availability")
-    print("   - Validates task results")
-    print("   - Handles execution exceptions")
+    print("\nLevel 4: Runtime Validation")
+    print(" - Verifies task behavior and context data")
 
 
 if __name__ == "__main__":
-    print("🧪 Running comprehensive validation tests")
+    print("Starting flow validation tests...")
 
     test_valid_flow()
     test_invalid_flows()
@@ -399,13 +301,10 @@ if __name__ == "__main__":
     test_edge_cases()
     demo_validation_levels()
 
-    print("\n" + "=" * 50)
-    print("🚀 To test API validation:")
-    print("   1. python main.py  (in one terminal)")
-    print("   2. python validation_examples.py api  (in another terminal)")
-    print("=" * 50)
+    print("\nTo test validation through the API, run:")
+    print("   python main.py     (in a separate terminal)")
+    print("   python validation_examples.py api")
 
     import sys
-
     if len(sys.argv) > 1 and sys.argv[1] == "api":
         test_api_validation()

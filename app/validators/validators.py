@@ -1,33 +1,24 @@
-
 from typing import Dict, Any, List, Set
 from app.models.models import Flow
 
 
 class FlowValidationError(Exception):
-    """Exception raised when flow validation fails."""
+    """Custom error raised when flow validation fails."""
     pass
 
 
 class FlowValidator:
-    """Validator for flow definition structures and logic."""
+    """Performs validation of flow structure, content, and logic."""
 
     @staticmethod
     def validate_flow_structure(flow_data: Dict[str, Any]) -> None:
-        """
-        Validate basic flow structure and required fields.
-
-        Args:
-            flow_data: Dictionary containing flow definition
-
-        Raises:
-            FlowValidationError: If structure validation fails
-        """
+        """Check that the flow has all required top-level fields."""
         if "flow" not in flow_data:
             raise FlowValidationError("Missing 'flow' key in flow_data")
 
         flow_info = flow_data["flow"]
-
         required_fields = ["id", "name", "start_task", "tasks", "conditions"]
+
         for field in required_fields:
             if field not in flow_info:
                 raise FlowValidationError(f"Missing required field: '{field}'")
@@ -49,15 +40,7 @@ class FlowValidator:
 
     @staticmethod
     def validate_tasks(tasks_data: List[Dict[str, Any]]) -> None:
-        """
-        Validate task definitions for completeness and uniqueness.
-
-        Args:
-            tasks_data: List of task definition dictionaries
-
-        Raises:
-            FlowValidationError: If task validation fails
-        """
+        """Ensure tasks are valid and unique."""
         task_names = set()
 
         for i, task in enumerate(tasks_data):
@@ -80,17 +63,7 @@ class FlowValidator:
 
     @staticmethod
     def validate_conditions(conditions_data: List[Dict[str, Any]], task_names: Set[str], start_task: str) -> None:
-        """
-        Validate condition definitions and references.
-
-        Args:
-            conditions_data: List of condition definition dictionaries
-            task_names: Set of valid task names for reference checking
-            start_task: Name of the starting task
-
-        Raises:
-            FlowValidationError: If condition validation fails
-        """
+        """Ensure conditions reference valid tasks and are structurally correct."""
         for i, condition in enumerate(conditions_data):
             if not isinstance(condition, dict):
                 raise FlowValidationError(f"Condition {i} must be a dictionary")
@@ -105,35 +78,22 @@ class FlowValidator:
                     raise FlowValidationError(f"Condition {i} field '{field}' must be a non-empty string")
 
             if condition["source_task"] not in task_names:
-                raise FlowValidationError(
-                    f"Condition {i} references unknown source_task: '{condition['source_task']}'"
-                )
+                raise FlowValidationError(f"Condition {i} uses unknown source_task: '{condition['source_task']}'")
 
-            valid_outcomes = ["success", "failure"]
-            if condition["outcome"] not in valid_outcomes:
+            if condition["outcome"] not in ["success", "failure"]:
                 raise FlowValidationError(
-                    f"Condition {i} has invalid outcome: '{condition['outcome']}'. "
-                    f"Must be one of: {valid_outcomes}"
+                    f"Condition {i} has invalid outcome: '{condition['outcome']}' "
+                    f"(expected 'success' or 'failure')"
                 )
 
             for target_field in ["target_task_success", "target_task_failure"]:
                 target_task = condition[target_field]
                 if target_task != "end" and target_task not in task_names:
-                    raise FlowValidationError(
-                        f"Condition {i} references unknown {target_field}: '{target_task}'"
-                    )
+                    raise FlowValidationError(f"Condition {i} uses unknown {target_field}: '{target_task}'")
 
     @staticmethod
     def validate_flow_logic(flow: Flow) -> None:
-        """
-        Validate flow logic including cycles and reachability.
-
-        Args:
-            flow: Flow instance to validate
-
-        Raises:
-            FlowValidationError: If logic validation fails
-        """
+        """Check for cycles and unreachable tasks."""
         task_names = {task.name for task in flow.tasks}
 
         if flow.start_task not in task_names:
@@ -144,30 +104,21 @@ class FlowValidator:
 
     @staticmethod
     def _check_for_cycles(flow: Flow) -> None:
-        """
-        Check for cycles in flow execution paths.
-
-        Args:
-            flow: Flow instance to check
-
-        Raises:
-            FlowValidationError: If cycles are detected
-        """
+        """Detect cycles using DFS."""
         transitions = {}
         for condition in flow.conditions:
-            source = condition.source_task
-            if source not in transitions:
-                transitions[source] = []
+            src = condition.source_task
+            transitions.setdefault(src, [])
 
             if condition.target_task_success != "end":
-                transitions[source].append(condition.target_task_success)
+                transitions[src].append(condition.target_task_success)
             if condition.target_task_failure != "end":
-                transitions[source].append(condition.target_task_failure)
+                transitions[src].append(condition.target_task_failure)
 
         visited = set()
         rec_stack = set()
 
-        def has_cycle(node):
+        def visit(node):
             if node in rec_stack:
                 return True
             if node in visited:
@@ -176,34 +127,27 @@ class FlowValidator:
             visited.add(node)
             rec_stack.add(node)
 
-            for neighbor in transitions.get(node, []):
-                if has_cycle(neighbor):
+            for next_task in transitions.get(node, []):
+                if visit(next_task):
                     return True
 
             rec_stack.remove(node)
             return False
 
-        if has_cycle(flow.start_task):
-            raise FlowValidationError("Flow contains cycles")
+        if visit(flow.start_task):
+            raise FlowValidationError("Flow contains a cycle in task transitions")
 
     @staticmethod
     def _check_task_reachability(flow: Flow) -> None:
-        """
-        Check if all tasks are reachable from start_task.
-
-        Args:
-            flow: Flow instance to check
-        """
+        """Ensure that all tasks can be reached from the start."""
         transitions = {}
         for condition in flow.conditions:
-            source = condition.source_task
-            if source not in transitions:
-                transitions[source] = []
-
+            src = condition.source_task
+            transitions.setdefault(src, [])
             if condition.target_task_success != "end":
-                transitions[source].append(condition.target_task_success)
+                transitions[src].append(condition.target_task_success)
             if condition.target_task_failure != "end":
-                transitions[source].append(condition.target_task_failure)
+                transitions[src].append(condition.target_task_failure)
 
         reachable = set()
         stack = [flow.start_task]
@@ -214,77 +158,53 @@ class FlowValidator:
                 continue
 
             reachable.add(current)
-            for neighbor in transitions.get(current, []):
-                if neighbor not in reachable:
-                    stack.append(neighbor)
+            stack.extend(transitions.get(current, []))
 
         all_tasks = {task.name for task in flow.tasks}
         unreachable = all_tasks - reachable
 
         if unreachable:
-            print(f"Warning: Unreachable tasks found: {unreachable}")
+            print(f"Warning: unreachable tasks: {unreachable}")
 
     @classmethod
     def validate_complete_flow(cls, flow_data: Dict[str, Any]) -> None:
-        """
-        Perform complete validation of flow definition.
-
-        Args:
-            flow_data: Dictionary containing flow definition
-
-        Raises:
-            FlowValidationError: If any validation step fails
-        """
-        # 1. Validate structure
+        """Run full validation: structure, task/condition integrity, and logic."""
         cls.validate_flow_structure(flow_data)
 
         flow_info = flow_data["flow"]
-
-        # 2. Validate tasks and conditions
         cls.validate_tasks(flow_info["tasks"])
+
         task_names = {task["name"] for task in flow_info["tasks"]}
         cls.validate_conditions(flow_info["conditions"], task_names, flow_info["start_task"])
 
-        # 3. Manually construct Flow instance (to avoid recursive validation)
         try:
-            flow = Flow.from_dict(flow_data["flow"])
+            flow = Flow.from_dict(flow_info)
         except Exception as e:
-            raise FlowValidationError(f"Failed to parse Flow object: {e}")
+            raise FlowValidationError(f"Failed to build Flow model: {e}")
 
-        # 4. Validate logic using Flow instance
         cls.validate_flow_logic(flow)
 
 
 class ContextValidator:
-    """Validator for execution context data."""
+    """Basic validation for execution context."""
 
     @staticmethod
     def validate_execution_context(context: Dict[str, Any]) -> None:
-        """
-        Validate execution context structure and size.
-
-        Args:
-            context: Execution context dictionary
-
-        Raises:
-            FlowValidationError: If context validation fails
-        """
+        """Make sure context is a flat dict with string keys and reasonable size."""
         if not isinstance(context, dict):
             raise FlowValidationError("Context must be a dictionary")
 
-        for key in context.keys():
+        for key in context:
             if not isinstance(key, str):
-                raise FlowValidationError(f"Context key must be string, got: {type(key)}")
+                raise FlowValidationError(f"Context key must be a string. Got: {type(key)}")
 
         import json
-        context_size = len(json.dumps(context, default=str))
-        if context_size > 1024 * 1024:
-            raise FlowValidationError(f"Context too large: {context_size} bytes (max 1MB)")
+        size = len(json.dumps(context, default=str))
+        if size > 1024 * 1024:
+            raise FlowValidationError(f"Context too large: {size} bytes (max 1MB)")
 
 
 if __name__ == "__main__":
-    """Example usage of validators."""
-
     valid_flow = {
         "flow": {
             "id": "test_flow",
@@ -309,9 +229,9 @@ if __name__ == "__main__":
 
     try:
         FlowValidator.validate_complete_flow(valid_flow)
-        print("✅ Flow validation passed!")
+        print("Flow validation passed")
     except FlowValidationError as e:
-        print(f"❌ Flow validation failed: {e}")
+        print(f"Flow validation failed: {e}")
 
     invalid_flow = {
         "flow": {
@@ -328,6 +248,6 @@ if __name__ == "__main__":
 
     try:
         FlowValidator.validate_complete_flow(invalid_flow)
-        print("✅ Flow validation passed!")
+        print("Flow validation passed")
     except FlowValidationError as e:
-        print(f"❌ Flow validation failed: {e}")
+        print(f"Flow validation failed: {e}")

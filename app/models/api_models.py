@@ -3,18 +3,18 @@ from pydantic import BaseModel
 
 
 class FlowCreateRequest(BaseModel):
-    """Request model for flow creation endpoint."""
+    # Payload when creating a new flow
     flow_data: Dict[str, Any]
 
 
 class FlowExecuteRequest(BaseModel):
-    """Request model for flow execution endpoint."""
+    # Payload for executing an existing flow
     flow_id: str
     context: Optional[Dict[str, Any]] = None
 
 
 class TaskResultResponse(BaseModel):
-    """Response model for individual task execution results."""
+    # Info about a single task execution result
     status: str
     data: Any = None
     error: Optional[str] = None
@@ -22,7 +22,7 @@ class TaskResultResponse(BaseModel):
 
 
 class FlowExecutionResponse(BaseModel):
-    """Response model for flow execution status and results."""
+    # Full response after running a flow
     execution_id: str
     flow_id: str
     status: str
@@ -34,13 +34,13 @@ class FlowExecutionResponse(BaseModel):
 
 
 class TaskInfo(BaseModel):
-    """Response model for task information."""
+    # Basic info about a task in a flow
     name: str
     description: str
 
 
 class ConditionInfo(BaseModel):
-    """Response model for condition information."""
+    # How tasks connect depending on outcomes
     name: str
     description: str
     source_task: str
@@ -50,7 +50,7 @@ class ConditionInfo(BaseModel):
 
 
 class FlowInfo(BaseModel):
-    """Response model for complete flow information."""
+    # Full metadata for a flow definition
     id: str
     name: str
     start_task: str
@@ -59,11 +59,11 @@ class FlowInfo(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Response model for health check endpoint."""
+    # Response format for /health endpoint
     status: str
     service: str
 
 
 class MessageResponse(BaseModel):
-    """Generic response model for simple message responses."""
+    # Generic message format for responses
     message: str

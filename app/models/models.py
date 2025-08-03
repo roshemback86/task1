@@ -1,4 +1,3 @@
-
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -7,7 +6,7 @@ from datetime import datetime
 
 
 class TaskStatus(Enum):
-    """Enumeration of possible task execution states."""
+    # Current state of a task during execution
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
@@ -15,7 +14,7 @@ class TaskStatus(Enum):
 
 
 class FlowStatus(Enum):
-    """Enumeration of possible flow execution states."""
+    # Overall state of a flow execution
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -24,15 +23,7 @@ class FlowStatus(Enum):
 
 @dataclass
 class TaskResult:
-    """
-    Container for task execution results.
-
-    Attributes:
-        status: Current execution status of the task
-        data: Result data returned by the task function
-        error: Error message if task failed
-        execution_time: Time taken to execute the task in seconds
-    """
+    # Result of a single task run
     status: TaskStatus
     data: Any = None
     error: Optional[str] = None
@@ -41,14 +32,7 @@ class TaskResult:
 
 @dataclass
 class Task:
-    """
-    Represents a single executable task within a flow.
-
-    Attributes:
-        name: Unique identifier for the task
-        description: Human-readable description of the task
-        function: Optional async function to execute for this task
-    """
+    # Defines a task that can be executed in a flow
     name: str
     description: str
     function: Optional[Callable] = None
@@ -56,17 +40,7 @@ class Task:
 
 @dataclass
 class Condition:
-    """
-    Defines conditional logic for flow control between tasks.
-
-    Attributes:
-        name: Unique identifier for the condition
-        description: Human-readable description of the condition
-        source_task: Name of the task this condition evaluates
-        outcome: Expected task outcome ('success' or 'failure')
-        target_task_success: Next task to execute if condition matches
-        target_task_failure: Next task to execute if condition doesn't match
-    """
+    # Controls flow between tasks depending on result
     name: str
     description: str
     source_task: str
@@ -75,38 +49,17 @@ class Condition:
     target_task_failure: str
 
     def evaluate(self, task_result: TaskResult) -> str:
-        """
-        Evaluate the condition against a task result.
-
-        Args:
-            task_result: The result of the source task execution
-
-        Returns:
-            Name of the next task to execute or 'end' to terminate flow
-        """
+        # Decide next task based on task result
         if self.outcome == "success" and task_result.status == TaskStatus.SUCCESS:
             return self.target_task_success
         elif self.outcome == "failure" and task_result.status == TaskStatus.FAILURE:
             return self.target_task_success
-        else:
-            return self.target_task_failure
+        return self.target_task_failure
 
 
 @dataclass
 class FlowExecution:
-    """
-    Tracks the state and progress of a flow execution instance.
-
-    Attributes:
-        flow_id: Identifier of the flow being executed
-        execution_id: Unique identifier for this execution instance
-        status: Current execution status
-        current_task: Name of the currently executing task
-        task_results: Dictionary of completed task results
-        start_time: Timestamp when execution began
-        end_time: Timestamp when execution completed
-        context: Shared data context for task communication
-    """
+    # Tracks the progress of a running flow
     flow_id: str
     execution_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     status: FlowStatus = FlowStatus.PENDING
@@ -119,16 +72,7 @@ class FlowExecution:
 
 @dataclass
 class Flow:
-    """
-    Defines a complete workflow with tasks and conditional logic.
-
-    Attributes:
-        id: Unique identifier for the flow
-        name: Human-readable name for the flow
-        start_task: Name of the first task to execute
-        tasks: List of all tasks in the flow
-        conditions: List of conditional transitions between tasks
-    """
+    # Defines a full workflow with tasks and conditions
     id: str
     name: str
     start_task: str
@@ -137,18 +81,7 @@ class Flow:
 
     @classmethod
     def from_json(cls, flow_data: Dict[str, Any]) -> 'Flow':
-        """
-        Create a Flow instance from JSON data with validation.
-
-        Args:
-            flow_data: Dictionary containing flow definition
-
-        Returns:
-            Validated Flow instance
-
-        Raises:
-            ValueError: If flow data is invalid or validation fails
-        """
+        # Parse and validate flow definition from JSON-like dict
         try:
             from app.validators.validators import FlowValidator
             FlowValidator.validate_complete_flow(flow_data)
@@ -188,21 +121,13 @@ class Flow:
             tasks=tasks,
             conditions=conditions
         )
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Flow":
-        """
-        Create a Flow instance from a dictionary (e.g. parsed JSON).
-    
-        Args:
-            data: Dictionary containing flow structure
-    
-        Returns:
-            Flow instance
-        """
+        # Simpler version for creating flow from already parsed dict
         tasks = [Task(**task_data) for task_data in data.get("tasks", [])]
         conditions = [Condition(**cond_data) for cond_data in data.get("conditions", [])]
-    
+
         return cls(
             id=data["id"],
             name=data["name"],
