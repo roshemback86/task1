@@ -76,7 +76,7 @@ class FlowManagerClient:
         """
         response = requests.post(
             f"{self.base_url}/flows",
-            json={"flow_data": flow_data}
+            json={"flow_data": flow_data["flow"]}
         )
         response.raise_for_status()
         return response.json()
