@@ -1,10 +1,3 @@
-# models.py
-"""
-Core data models for the Flow Manager system.
-
-This module defines the primary data structures used throughout the application,
-including Flow, Task, Condition, and execution tracking models.
-"""
 
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field

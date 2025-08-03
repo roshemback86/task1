@@ -1,10 +1,3 @@
-# demo.py
-"""
-Standalone demonstration of the Flow Manager system.
-
-This module provides a command-line demonstration of flow creation,
-registration, and execution without requiring the API server.
-"""
 
 import asyncio
 from app.models.models import Flow

@@ -1,10 +1,3 @@
-# test_client.py
-"""
-Test client for Flow Manager API endpoints.
-
-This module provides comprehensive testing functionality for the Flow Manager
-API, including basic functionality tests and stress testing capabilities.
-"""
 
 import requests
 import json

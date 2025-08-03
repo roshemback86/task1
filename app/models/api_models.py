@@ -1,11 +1,3 @@
-# api_models.py
-"""
-Pydantic models for API request and response validation.
-
-This module defines the data structures used for API communication,
-providing automatic validation and serialization for HTTP endpoints.
-"""
-
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
 

@@ -1,10 +1,3 @@
-# validators.py
-"""
-Validation framework for Flow Manager data structures.
-
-This module provides comprehensive validation for flow definitions,
-task configurations, conditions, and execution contexts.
-"""
 
 from typing import Dict, Any, List, Set
 from app.models.models import Flow

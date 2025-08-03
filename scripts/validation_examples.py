@@ -1,11 +1,3 @@
-# validation_examples.py
-"""
-Comprehensive validation examples and test cases for Flow Manager.
-
-This module demonstrates various validation scenarios including valid flows,
-common error cases, and edge conditions for testing the validation framework.
-"""
-
 import requests
 from app.validators.validators import FlowValidator, ContextValidator, FlowValidationError
 

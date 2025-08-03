@@ -1,5 +1,3 @@
-# tests/test_tasks.py
-
 import pytest
 from app.services.demo_tasks import TASK_FUNCTIONS
 

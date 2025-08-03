@@ -1,11 +1,3 @@
-# flow_manager.py
-"""
-Core flow management and orchestration engine.
-
-This module provides the FlowManager class which handles flow registration,
-execution orchestration, and state management for workflow instances.
-"""
-
 from typing import Dict, Any, Optional
 from datetime import datetime
 from app.models.models import Flow, FlowExecution, FlowStatus, TaskStatus
