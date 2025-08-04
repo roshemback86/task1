@@ -42,7 +42,7 @@ flow-manager/
 ## Installation (Local Python)
 
 ```bash
-git clone https://github.com/your-username/flow-manager.git
+git clone https://github.com/roshemback86/task1.git
 cd flow-manager
 python -m venv venv
 source venv/bin/activate
