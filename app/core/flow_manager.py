@@ -2,7 +2,9 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 from app.models.models import Flow, FlowExecution, FlowStatus, TaskStatus
 from app.services.task_executor import TaskExecutor
-
+from app.services.demo_tasks import TASK_FUNCTIONS
+from app.services.task_mapper import match_function_by_description
+from app.validators.validators import FlowValidationError
 
 class FlowManager:
     def __init__(self):
@@ -11,6 +13,11 @@ class FlowManager:
         self.task_executor = TaskExecutor()
 
     def register_flow(self, flow: Flow) -> None:
+        for task in flow.tasks:
+            if task.function_name and task.function_name in TASK_FUNCTIONS:
+                task.function = TASK_FUNCTIONS[task.function_name]
+            elif not task.function:
+                task.function = match_function_by_description(task.description)
         self.flows[flow.id] = flow
 
     async def execute_flow(self, flow_id: str, context: Dict[str, Any] = None) -> FlowExecution:

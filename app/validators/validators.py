@@ -181,7 +181,14 @@ class FlowValidator:
             flow = Flow.from_dict(flow_info)
         except Exception as e:
             raise FlowValidationError(f"Failed to build Flow model: {e}")
-
+        
+        for task in flow.tasks:
+            if not task.function and not task.function_name:
+                print(
+                    f"Info: Task '{task.name}' has no explicit function_name — "
+                    "will attempt dynamic matching by description during execution"
+                )
+        
         cls.validate_flow_logic(flow)
 
 

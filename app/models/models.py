@@ -35,6 +35,7 @@ class Task:
     # Defines a task that can be executed in a flow
     name: str
     description: str
+    function_name: Optional[str] = None
     function: Optional[Callable] = None
 
 

@@ -1,4 +1,3 @@
-
 import asyncio
 import uuid
 from typing import Dict, Any
@@ -35,7 +34,11 @@ async def store_data_task(context: Dict[str, Any]) -> Any:
 
 # Registry mapping task names to their implementation functions
 TASK_FUNCTIONS = {
+    "fetch_data": fetch_data_task,
+    "process_data": process_data_task,
+    "store_data": store_data_task,
+    # old keys for tests
     "task1": fetch_data_task,
     "task2": process_data_task,
-    "task3": store_data_task
+    "task3": store_data_task,
 }
