@@ -37,6 +37,7 @@ TASK_FUNCTIONS = {
     "fetch_data": fetch_data_task,
     "process_data": process_data_task,
     "store_data": store_data_task,
+
     # old keys for tests
     "task1": fetch_data_task,
     "task2": process_data_task,

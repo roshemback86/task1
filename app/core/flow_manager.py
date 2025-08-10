@@ -80,3 +80,10 @@ class FlowManager:
 
     def get_flow(self, flow_id: str) -> Optional[Flow]:
         return self.flows.get(flow_id)
+    
+    def delete_flow(self, flow_id: str) -> None:
+        if flow_id not in self.flows:
+            raise FlowValidationError(f"Flow with id '{flow_id}' not found")
+        self.flows.pop(flow_id)
+
+

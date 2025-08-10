@@ -105,3 +105,12 @@ def register_routes(app: FastAPI, flow_manager: FlowManager):
     @app.get("/health", response_model=HealthResponse)
     async def health_check():
         return HealthResponse(status="healthy", service="Flow Manager")
+
+    @app.post("/flows/delete/{flow_id}", response_model=MessageResponse, status_code=200)
+    async def delete_flow(flow_id: str):
+        flow = flow_manager.get_flow(flow_id)
+        if not flow:
+            raise HTTPException(status_code=404, detail="Flow not found")
+        
+        flow_manager.delete_flow(flow_id)
+        return MessageResponse(message=f"Flow deleted successfully")
